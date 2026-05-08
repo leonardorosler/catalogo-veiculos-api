@@ -1,0 +1,103 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["queryCompiler", "driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  nome      String
+  slug      String   @unique
+  whatsapp  String?
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  usuarios  Usuario[]
+  veiculos  Veiculo[]
+}
+
+model Usuario {
+  id       String @id @default(cuid())
+  email    String @unique
+  senha    String
+  nome     String
+  role     Role   @default(ADMIN)
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  criadoEm DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  VENDEDOR
+}
+
+model Veiculo {
+  id          String   @id @default(cuid())
+  marca       String
+  modelo      String
+  ano         Int
+  preco       Float
+  km          Int
+  combustivel Combustivel
+  cambio      Cambio
+  cor         String
+  descricao   String?
+  destaque    Boolean  @default(false)
+  vendido     Boolean  @default(false)
+
+  tenantId  String
+  tenant    Tenant  @relation(fields: [tenantId], references: [id])
+
+  fotos     Foto[]
+  favoritos Favorito[]
+
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+}
+
+enum Combustivel {
+  GASOLINA
+  ETANOL
+  FLEX
+  DIESEL
+  ELETRICO
+  HIBRIDO
+}
+
+enum Cambio {
+  MANUAL
+  AUTOMATICO
+  CVT
+}
+
+model Foto {
+  id        String  @id @default(cuid())
+  url       String
+  ordem     Int     @default(0)
+  capa      Boolean @default(false)
+
+  veiculoId String
+  veiculo   Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+
+  criadoEm DateTime @default(now())
+}
+
+model Favorito {
+  id           String  @id @default(cuid())
+  sessionId    String
+
+  veiculoId    String
+  veiculo      Veiculo @relation(fields: [veiculoId], references: [id], onDelete: Cascade)
+
+  criadoEm     DateTime @default(now())
+
+  @@unique([sessionId, veiculoId])
+}
