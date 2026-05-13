@@ -10,15 +10,18 @@ datasource db {
 }
 
 model Tenant {
-  id        String   @id @default(cuid())
-  nome      String
-  slug      String   @unique
-  whatsapp  String?
-  ativo     Boolean  @default(true)
-  criadoEm DateTime @default(now())
+  id            String   @id @default(cuid())
+  nome          String
+  slug          String   @unique
+  whatsapp      String?
+  emailContato  String?
+  ativo         Boolean  @default(true)
+  criadoEm      DateTime @default(now())
 
-  usuarios  Usuario[]
-  veiculos  Veiculo[]
+  usuarios      Usuario[]
+  veiculos      Veiculo[]
+
+  leads         Lead[]
 }
 
 model Usuario {
@@ -100,4 +103,22 @@ model Favorito {
   criadoEm     DateTime @default(now())
 
   @@unique([sessionId, veiculoId])
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  tipo      TipoLead
+  nome      String
+  telefone  String
+  email     String?
+  dados     Json
+  lido      Boolean  @default(false)
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  criadoEm DateTime @default(now())
+}
+
+enum TipoLead {
+  VENDER_CARRO
+  FINANCIAMENTO
 }
