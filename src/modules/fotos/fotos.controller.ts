@@ -29,3 +29,12 @@ export async function deletar(req: Request<IdParams>, res: Response) {
     res.status(404).json({ message: error.message })
   }
 }
+//definicao de capa pelo amdmin
+export async function definirCapa(req: Request<IdParams>, res: Response) {
+  try {
+    const foto = await fotosService.definirCapa(req.params.id, req.tenantId)
+    res.json(foto)
+  } catch (error: any) {
+    res.status(404).json({ message: error.message })
+  }
+}

@@ -50,3 +50,26 @@ export async function deletar(fotoId: string, tenantId: string) {
   await supabase.storage.from(BUCKET).remove([nomeArquivo])
   await prisma.foto.delete({ where: { id: fotoId } })
 }
+
+//definicao de capa de card pelo admin
+
+export async function definirCapa(fotoId: string, tenantId: string) {
+  const foto = await prisma.foto.findFirst({
+    where: { id: fotoId },
+    include: { veiculo: true }
+  })
+
+  if (!foto || foto.veiculo.tenantId !== tenantId) throw new Error('Foto não encontrada')
+
+  // remove capa de todas as fotos do veículo
+  await prisma.foto.updateMany({
+    where: { veiculoId: foto.veiculoId },
+    data: { capa: false }
+  })
+
+  // define a nova capa
+  return prisma.foto.update({
+    where: { id: fotoId },
+    data: { capa: true }
+  })
+}
