@@ -3,6 +3,13 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '../src/lib/prisma'
 
 async function main() {
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD
+  const adminEmail = process.env.SEED_ADMIN_EMAIL
+
+  if (!adminPassword || adminPassword.length < 12 || !adminEmail) {
+    throw new Error('Defina SEED_ADMIN_EMAIL e SEED_ADMIN_PASSWORD (mínimo de 12 caracteres)')
+  }
+
   const tenant = await prisma.tenant.create({
     data: {
       nome: 'RD Veículos',
@@ -11,13 +18,14 @@ async function main() {
     }
   })
 
-  const hash = await bcrypt.hash('123456', 10)
+  const hash = await bcrypt.hash(adminPassword, 12)
 
   await prisma.usuario.create({
     data: {
       nome: 'Admin',
-      email: 'admin@rd.com',
+      email: adminEmail.trim().toLowerCase(),
       senha: hash,
+      role: 'ADMIN',
       tenantId: tenant.id,
     }
   })

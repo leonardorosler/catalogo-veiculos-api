@@ -1,7 +1,6 @@
 generator client {
-  provider        = "prisma-client"
-  output          = "../node_modules/.prisma/client"
-  previewFeatures = ["queryCompiler", "driverAdapters"]
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -29,7 +28,7 @@ model Usuario {
   email    String @unique
   senha    String
   nome     String
-  role     Role   @default(ADMIN)
+  role     Role   @default(VENDEDOR)
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id])

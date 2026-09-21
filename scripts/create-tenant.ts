@@ -128,6 +128,12 @@ async function ensureUniqueData(slug: string, adminEmail: string) {
 async function main() {
   const data = await collectInput()
 
+  if (data.adminSenha.length < 12) {
+    throw new Error('A senha do administrador deve ter pelo menos 12 caracteres.')
+  }
+
+  data.adminEmail = data.adminEmail.trim().toLowerCase()
+
   await ensureUniqueData(data.slug, data.adminEmail)
 
   const senhaHash = await bcrypt.hash(data.adminSenha, 10)
@@ -146,6 +152,7 @@ async function main() {
         nome: data.adminNome,
         email: data.adminEmail,
         senha: senhaHash,
+        role: 'ADMIN',
         tenantId: tenant.id,
       },
       select: {

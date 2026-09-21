@@ -1,6 +1,8 @@
 import { Request, Response } from 'express'
 import type { CambioType, CombustivelType } from '../../lib/prisma-client'
 import * as veiculosService from './veiculos.service'
+import { parseOrRespond } from '../../validation'
+import { vehicleSchema, vehicleUpdateSchema } from './veiculos.schemas'
 
 type IdParams = {
   id: string
@@ -40,8 +42,11 @@ export async function buscarPorId(req: Request<IdParams>, res: Response) {
 }
 
 export async function criar(req: Request, res: Response) {
+  const body = parseOrRespond(vehicleSchema, req.body, res)
+  if (!body) return
+
   try {
-    const veiculo = await veiculosService.criar(req.body, req.tenantId)
+    const veiculo = await veiculosService.criar(body, req.tenantId)
     res.status(201).json(veiculo)
   } catch (error: any) {
     res.status(400).json({ message: error.message })
@@ -49,8 +54,11 @@ export async function criar(req: Request, res: Response) {
 }
 
 export async function atualizar(req: Request<IdParams>, res: Response) {
+  const body = parseOrRespond(vehicleUpdateSchema, req.body, res)
+  if (!body) return
+
   try {
-    const veiculo = await veiculosService.atualizar(req.params.id, req.body, req.tenantId)
+    const veiculo = await veiculosService.atualizar(req.params.id, body, req.tenantId)
     res.json(veiculo)
   } catch (error: any) {
     res.status(400).json({ message: error.message })

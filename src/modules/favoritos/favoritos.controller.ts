@@ -1,5 +1,14 @@
 import { Request, Response } from 'express'
 import * as favoritosService from './favoritos.service'
+import { z } from 'zod'
+import { idSchema, parseOrRespond, sessionIdSchema } from '../../validation'
+
+const favoriteSchema = z.object({
+  sessionId: sessionIdSchema,
+  veiculoId: idSchema,
+}).strict()
+
+const sessionSchema = z.object({ sessionId: sessionIdSchema }).strict()
 
 function getQueryString(value: unknown) {
   if (typeof value === 'string') return value
@@ -8,14 +17,11 @@ function getQueryString(value: unknown) {
 }
 
 export async function favoritar(req: Request, res: Response) {
-  try {
-    const { sessionId, veiculoId } = req.body
-    if (!sessionId || !veiculoId) {
-      res.status(400).json({ message: 'sessionId e veiculoId são obrigatórios' })
-      return
-    }
+  const body = parseOrRespond(favoriteSchema, req.body, res)
+  if (!body) return
 
-    const favorito = await favoritosService.favoritar(sessionId, veiculoId)
+  try {
+    const favorito = await favoritosService.favoritar(body.sessionId, body.veiculoId, req.tenantId)
     res.status(201).json(favorito)
   } catch (error: any) {
     res.status(400).json({ message: error.message })
@@ -23,14 +29,12 @@ export async function favoritar(req: Request, res: Response) {
 }
 
 export async function desfavoritar(req: Request<{ veiculoId: string }>, res: Response) {
-  try {
-    const { sessionId } = req.body
-    if (!sessionId) {
-      res.status(400).json({ message: 'sessionId é obrigatório' })
-      return
-    }
+  const body = parseOrRespond(sessionSchema, req.body, res)
+  const veiculoId = parseOrRespond(idSchema, req.params.veiculoId, res)
+  if (!body || !veiculoId) return
 
-    await favoritosService.desfavoritar(sessionId, req.params.veiculoId)
+  try {
+    await favoritosService.desfavoritar(body.sessionId, veiculoId, req.tenantId)
     res.status(204).send()
   } catch (error: any) {
     res.status(404).json({ message: error.message })
@@ -38,14 +42,11 @@ export async function desfavoritar(req: Request<{ veiculoId: string }>, res: Res
 }
 
 export async function listar(req: Request, res: Response) {
-  try {
-    const sessionId = getQueryString(req.query.sessionId)
-    if (!sessionId) {
-      res.status(400).json({ message: 'sessionId é obrigatório' })
-      return
-    }
+  const sessionId = parseOrRespond(sessionIdSchema, getQueryString(req.query.sessionId), res)
+  if (!sessionId) return
 
-    const veiculos = await favoritosService.listar(sessionId)
+  try {
+    const veiculos = await favoritosService.listar(sessionId, req.tenantId)
     res.json(veiculos)
   } catch (error: any) {
     res.status(400).json({ message: error.message })

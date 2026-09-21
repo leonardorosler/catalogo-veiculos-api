@@ -1,22 +1,21 @@
 import { Request, Response } from 'express'
+import { z } from 'zod'
 import * as authService from './auth.service'
+import { parseOrRespond } from '../../validation'
 
-export async function register(req: Request, res: Response) {
-  try {
-    const { nome, email, senha } = req.body
-    const usuario = await authService.register(nome, email, senha, req.tenantId)
-    res.status(201).json(usuario)
-  } catch (error: any) {
-    res.status(400).json({ message: error.message })
-  }
-}
+const loginSchema = z.object({
+  email: z.string().trim().email().max(254).transform(value => value.toLowerCase()),
+  senha: z.string().min(8).max(128),
+}).strict()
 
 export async function login(req: Request, res: Response) {
+  const body = parseOrRespond(loginSchema, req.body, res)
+  if (!body) return
+
   try {
-    const { email, senha } = req.body
-    const resultado = await authService.login(email, senha)
+    const resultado = await authService.login(body.email, body.senha, req.tenantId)
     res.json(resultado)
-  } catch (error: any) {
-    res.status(401).json({ message: error.message })
+  } catch {
+    res.status(401).json({ message: 'Credenciais inválidas' })
   }
 }

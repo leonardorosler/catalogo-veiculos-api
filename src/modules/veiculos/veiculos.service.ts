@@ -1,5 +1,6 @@
 import type { CambioType, CombustivelType } from '../../lib/prisma-client'
 import { prisma } from '../../lib/prisma'
+import type { VehicleInput, VehicleUpdateInput } from './veiculos.schemas'
 
 interface FiltrosVeiculo {
   marca?: string
@@ -45,13 +46,13 @@ export async function buscarPorId(id: string, tenantId: string) {
   return veiculo
 }
 
-export async function criar(dados: any, tenantId: string) {
+export async function criar(dados: VehicleInput, tenantId: string) {
   return prisma.veiculo.create({
     data: { ...dados, tenantId }
   })
 }
 
-export async function atualizar(id: string, dados: any, tenantId: string) {
+export async function atualizar(id: string, dados: VehicleUpdateInput, tenantId: string) {
   const existe = await prisma.veiculo.findFirst({ where: { id, tenantId } })
   if (!existe) throw new Error('Veículo não encontrado')
 
