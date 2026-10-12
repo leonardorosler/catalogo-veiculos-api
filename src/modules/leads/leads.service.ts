@@ -2,12 +2,11 @@ import { Resend } from 'resend'
 import { prisma } from '../../lib/prisma'
 import type { Prisma } from '../../lib/prisma-client'
 import type { FinanceLeadInput, SellCarLeadInput } from './leads.schemas'
+import { createLead, legacyList, legacyToggle, serializeLead, type Context } from '../crm/crm.service'
 
-type TipoLead = 'VENDER_CARRO' | 'FINANCIAMENTO'
+type TipoLead = 'VENDER_CARRO' | 'FINANCIAMENTO' | 'INTERESSE'
 type SellCarData = Omit<SellCarLeadInput, 'nome' | 'telefone' | 'email'>
 type FinanceData = Omit<FinanceLeadInput, 'nome' | 'telefone' | 'email' | 'cpf'>
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 function toSellCarJson(dados: SellCarData): Prisma.InputJsonObject {
   return {
@@ -34,6 +33,7 @@ async function sendLeadEmail(to: string | null, subject: string, text: string) {
   if (!to || !from || !process.env.RESEND_API_KEY) return
 
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY)
     const result = await resend.emails.send({ from, to, subject, text })
     if (result.error) console.error('Falha ao enviar notificação de lead')
   } catch {
@@ -51,16 +51,7 @@ export async function criarLeadVenderCarro(
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
   if (!tenant) throw new Error('Tenant não encontrado')
 
-  const lead = await prisma.lead.create({
-    data: {
-      tipo: 'VENDER_CARRO',
-      nome,
-      telefone,
-      email,
-      dados: toSellCarJson(dados),
-      tenantId,
-    }
-  })
+  const lead = await createLead(tenantId, { tipo: 'VENDER_CARRO', origem: 'SITE', nome, telefone, email, dados: toSellCarJson(dados) as Record<string, string> })
 
   void sendLeadEmail(
     tenant.emailContato ?? process.env.EMAIL_FALLBACK ?? null,
@@ -77,7 +68,7 @@ export async function criarLeadVenderCarro(
     ].join('\n')
   )
 
-  return lead
+  return serializeLead(lead, 'PUBLIC', false, true)
 }
 
 export async function criarLeadFinanciamento(
@@ -90,16 +81,7 @@ export async function criarLeadFinanciamento(
   const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } })
   if (!tenant) throw new Error('Tenant não encontrado')
 
-  const lead = await prisma.lead.create({
-    data: {
-      tipo: 'FINANCIAMENTO',
-      nome,
-      telefone,
-      email,
-      dados: toFinanceJson(dados),
-      tenantId,
-    }
-  })
+  const lead = await createLead(tenantId, { tipo: 'FINANCIAMENTO', origem: 'SITE', nome, telefone, email, dados: toFinanceJson(dados) as Record<string, string> })
 
   void sendLeadEmail(
     tenant.emailContato ?? process.env.EMAIL_FALLBACK ?? null,
@@ -116,18 +98,13 @@ export async function criarLeadFinanciamento(
     ].join('\n')
   )
 
-  return lead
+  return serializeLead(lead, 'PUBLIC', false, true)
 }
 
-export async function listarLeads(tenantId: string, tipo?: TipoLead) {
-  return prisma.lead.findMany({
-    where: { tenantId, ...(tipo && { tipo }) },
-    orderBy: { criadoEm: 'desc' }
-  })
+export async function listarLeads(ctx: Context, tipo?: TipoLead) {
+  return legacyList(ctx, tipo)
 }
 
-export async function marcarLido(id: string, tenantId: string) {
-  const lead = await prisma.lead.findFirst({ where: { id, tenantId } })
-  if (!lead) throw new Error('Lead não encontrado')
-  return prisma.lead.update({ where: { id }, data: { lido: !lead.lido } })
+export async function marcarLido(id: string, ctx: Context) {
+  return legacyToggle(ctx, id)
 }

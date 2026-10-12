@@ -5,9 +5,16 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "setup:local": "node scripts/local-dev.cjs setup",
+    "db:local": "node scripts/local-dev.cjs migrate",
+    "set:plan:local": "node scripts/local-dev.cjs set-plan",
+    "create:tenant:local": "node scripts/local-dev.cjs create-tenant",
     "build": "prisma generate && tsc",
+    "test": "tsx --test src/**/*.test.ts scripts/*.test.cjs",
+    "test:integration": "tsx scripts/homologar-planos.ts",
     "start": "node dist/server.js",
-    "create:tenant": "tsx scripts/create-tenant.ts"
+    "create:tenant": "tsx scripts/create-tenant.ts",
+    "set:plan": "tsx scripts/set-plan.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

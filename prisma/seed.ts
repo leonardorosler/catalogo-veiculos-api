@@ -15,6 +15,7 @@ async function main() {
       nome: 'RD Veículos',
       slug: 'rd-veiculos',
       whatsapp: '5553999999999',
+      plano: 'PREMIUM',
     }
   })
 

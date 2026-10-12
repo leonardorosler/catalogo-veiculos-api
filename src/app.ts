@@ -7,7 +7,11 @@ import fotosRoutes from './modules/fotos/fotos.routes'
 import favoritosRoutes from './modules/favoritos/favoritos.routes'
 import adminRoutes from './modules/admin/admin.routes'
 import leadsRoutes from './modules/leads/leads.routes'
+import planosRoutes from './modules/planos/planos.routes'
+import usuariosRoutes from './modules/usuarios/usuarios.routes'
 import { apiLimiter } from './middlewares/rate-limit'
+import crmRoutes, { publicConfigHandler } from './modules/crm/crm.routes'
+import { tenantMiddleware } from './middlewares/tenant'
 
 const app = express()
 
@@ -30,6 +34,7 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id'],
+  exposedHeaders: ['Content-Disposition'],
   maxAge: 86400,
 }))
 app.use(apiLimiter)
@@ -41,6 +46,10 @@ app.use('/', fotosRoutes)
 app.use('/favoritos', favoritosRoutes)
 app.use('/admin', adminRoutes)
 app.use('/leads', leadsRoutes)
+app.use('/plano', planosRoutes)
+app.use('/admin/usuarios', usuariosRoutes)
+app.use('/crm', crmRoutes)
+app.get('/configuracao-publica', tenantMiddleware, publicConfigHandler)
 
 app.get('/health', (req, res) => {
   res.json({ ok: true })

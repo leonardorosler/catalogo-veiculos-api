@@ -1,7 +1,11 @@
 node_modules
 dist
+scripts
+docs
 # Keep environment variables out of version control
 .env
+.env.local
+.local/
 .env.example
 
 /src/generated/prisma

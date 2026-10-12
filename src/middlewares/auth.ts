@@ -1,5 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
-import jwt from 'jsonwebtoken'
+import { prisma } from '../lib/prisma'
+import {
+  createAuthMiddleware,
+  getJwtSecret,
+  selectUsuarioAutenticado,
+  type UsuarioAutenticado,
+} from '../modules/auth/auth.session'
 
 type Role = 'ADMIN' | 'VENDEDOR'
 
@@ -8,45 +14,18 @@ declare global {
     interface Request {
       userId: string
       role: string
+      authUsuario: UsuarioAutenticado
     }
   }
 }
 
-interface JwtPayload {
-  userId: string
-  tenantId: string
-  role: string
-}
-
-function getJwtSecret() {
-  const secret = process.env.JWT_SECRET
-  if (!secret || secret.length < 32) throw new Error('JWT_SECRET inválido')
-  return secret
-}
-
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const authHeader = req.headers.authorization
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ message: 'Token não informado' })
-    return
-  }
-
-  try {
-    const payload = jwt.verify(authHeader.slice(7), getJwtSecret(), { algorithms: ['HS256'] }) as JwtPayload
-
-    if (!payload.userId || !payload.tenantId || !payload.role || payload.tenantId !== req.tenantId) {
-      res.status(403).json({ message: 'Token não pertence a esta revenda' })
-      return
-    }
-
-    req.userId = payload.userId
-    req.role = payload.role
-    next()
-  } catch {
-    res.status(401).json({ message: 'Token inválido ou expirado' })
-  }
-}
+export const authMiddleware = createAuthMiddleware({
+  getSecret: getJwtSecret,
+  findUsuario: (id, tenantId) => prisma.usuario.findFirst({
+    where: { id, tenantId, ativo: true },
+    select: selectUsuarioAutenticado,
+  }),
+})
 
 export function requireRole(...allowedRoles: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {

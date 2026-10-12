@@ -12,6 +12,8 @@ export const vehicleSchema = z.object({
   cambio: z.enum(['MANUAL', 'AUTOMATICO', 'CVT']),
   cor: z.string().trim().min(1).max(50),
   descricao: z.string().trim().max(5000).optional(),
+  categoria: z.string().trim().min(1).max(60).nullable().optional(),
+  opcionais: z.array(z.string().trim().min(1).max(100)).max(60).transform(values => [...new Set(values)]).optional(),
 }).strict()
 
 export const vehicleUpdateSchema = vehicleSchema.partial().refine(

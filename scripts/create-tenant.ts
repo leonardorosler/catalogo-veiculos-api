@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { createInterface } from 'node:readline/promises'
 import { stdin as input, stdout as output } from 'node:process'
 import { prisma } from '../src/lib/prisma'
+import type { PlanoNome } from '../src/config/planos'
 
 type CreateTenantInput = {
   nome: string
@@ -11,6 +12,7 @@ type CreateTenantInput = {
   adminNome: string
   adminEmail: string
   adminSenha: string
+  plano: PlanoNome
 }
 
 function parseArgs(argv: string[]) {
@@ -47,6 +49,7 @@ Opcoes:
   --nome           Nome da garagem
   --slug           Slug unico da garagem
   --whatsapp       WhatsApp da garagem
+  --plano          BASICO, PROFISSIONAL ou PREMIUM (padrao: BASICO)
   --admin-nome     Nome do usuario administrador
   --admin-email    Email do usuario administrador
   --admin-senha    Senha do usuario administrador
@@ -100,6 +103,11 @@ async function collectInput(): Promise<CreateTenantInput> {
     process.exit(0)
   }
 
+  const plano = (args.plano?.trim().toUpperCase() || 'BASICO') as PlanoNome
+  if (!['BASICO', 'PROFISSIONAL', 'PREMIUM'].includes(plano)) {
+    throw new Error('Plano invalido. Use BASICO, PROFISSIONAL ou PREMIUM.')
+  }
+
   return {
     nome: await askRequired('Nome da garagem: ', args.nome),
     slug: await askRequired('Slug da garagem: ', args.slug),
@@ -107,6 +115,7 @@ async function collectInput(): Promise<CreateTenantInput> {
     adminNome: await askRequired('Nome do admin: ', args['admin-nome']),
     adminEmail: await askRequired('Email do admin: ', args['admin-email']),
     adminSenha: await askRequired('Senha do admin: ', args['admin-senha']),
+    plano,
   }
 }
 
@@ -144,6 +153,7 @@ async function main() {
         nome: data.nome,
         slug: data.slug,
         whatsapp: data.whatsapp,
+        plano: data.plano,
       },
     })
 
@@ -170,6 +180,7 @@ async function main() {
   console.log(`Tenant ID: ${result.tenant.id}`)
   console.log(`Nome: ${result.tenant.nome}`)
   console.log(`Slug: ${result.tenant.slug}`)
+  console.log(`Plano: ${result.tenant.plano}`)
   console.log(`Admin: ${result.usuario.nome} <${result.usuario.email}>`)
 }
 

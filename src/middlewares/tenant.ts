@@ -1,10 +1,12 @@
 import { Request, Response, NextFunction } from 'express'
 import { prisma } from '../lib/prisma'
+import type { PlanoNome } from '../config/planos'
 
 declare global {
   namespace Express {
     interface Request {
       tenantId: string
+      tenantPlano: PlanoNome
     }
   }
 }
@@ -27,6 +29,7 @@ export async function tenantMiddleware(req: Request, res: Response, next: NextFu
     }
 
     req.tenantId = tenant.id
+    req.tenantPlano = tenant.plano
     next()
   } catch {
     res.status(503).json({ message: 'Serviço temporariamente indisponível' })
